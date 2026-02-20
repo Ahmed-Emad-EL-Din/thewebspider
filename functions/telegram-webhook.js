@@ -1,8 +1,7 @@
 const { MongoClient } = require('mongodb');
 
-// Fallback to fetch if running in older Node versions without global fetch (like Node 16),
-// but Netlify now supports Node 18/20 by default which has native fetch.
-const fetch = global.fetch || require('node-fetch');
+// Netlify now supports Node 18/20 by default which has native fetch.
+const fetch = global.fetch;
 
 let cachedClient = null;
 

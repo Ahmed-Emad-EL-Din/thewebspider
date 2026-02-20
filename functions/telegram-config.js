@@ -1,4 +1,4 @@
-const fetch = global.fetch || require('node-fetch');
+const fetch = global.fetch;
 
 exports.handler = async (event, context) => {
     // Only allow GET requests

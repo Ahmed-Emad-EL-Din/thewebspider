@@ -62,7 +62,7 @@ This section provides a rigorous, step-by-step guide for deploying the TheWebspi
 6. **Construct Your `MONGO_URI`**:
    - Replace `<username>` with the database user you created in Step 3.
    - Replace `<password>` with the password you created in Step 3. (Ensure you remove the `<` and `>` brackets).
-   - **Crucial Step**: You must tell MongoDB which specific database to use. By default, there is nothing between `.net/` and `?retryWrites`. Insert the word `thewebspider` right there.
+   - **Crucial Step**: You must tell MongoDB which specific database to use. By default, there is nothing between `.net/` and `?retryWrites`. Insert your chosen **Database Name** (e.g., `thewebspider`) right there. *(Note: This is strictly the name of your MongoDB database, it does NOT need to match your Google OAuth credential name).*
    - Your final, complete string should look exactly like this example:
      `mongodb+srv://ahmed_admin:MySuperSecretPass@cluster0.abcde.mongodb.net/thewebspider?retryWrites=true&w=majority`
    - **Save this final string**. This is your `MONGO_URI` environment variable.
@@ -88,6 +88,8 @@ This section provides a rigorous, step-by-step guide for deploying the TheWebspi
    - When a user clicks "Add Monitor" and enables Telegram, they simply click the **"Connect Telegram App"** button.
    - Behind the scenes, our `telegram-config` Netlify function automatically sets up a secure webhook with Telegram.
    - The user opens Telegram, clicks "Start", and the dashboard instantly auto-fills their Chat ID via background polling.
+
+#### Email (SMTP) Setup
 1. **App Passwords**: For security, do not use your primary account password. If using Gmail, go to Google Account Manage > Security > 2-Step Verification > App passwords.
 2. **Generate**: Create a new app password for "Other (Custom name)" and call it "TheWebspider".
 3. **Credentials**:
