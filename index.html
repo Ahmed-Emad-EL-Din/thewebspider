@@ -15,7 +15,10 @@
     <!-- Landing Page / Login Overlay -->
     <div id="login-overlay" class="landing-page overlay">
         <div class="landing-content animate-fade-in text-center">
-            <div class="logo-large mb-2">👁️</div>
+            <div class="logo-large mb-2">
+                <img src="/spider-logo.png" alt="Webspider Logo"
+                    style="width: 90px; height: 90px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);">
+            </div>
             <h1 class="hero-title">Webspider</h1>
             <p class="hero-subtitle mb-4">Professional Web Monitoring & AI Diff Summarization.</p>
 
@@ -45,7 +48,11 @@
     <!-- Main Dashboard -->
     <header class="main-header glass animate-slide-down" style="display: none;">
         <div class="container d-flex justify-between align-center">
-            <div class="logo">👁️ Webspider</div>
+            <div class="logo d-flex align-center">
+                <img src="/spider-logo.png" alt="Logo"
+                    style="width: 28px; height: 28px; border-radius: 50%; margin-right: 10px; object-fit: cover; border: 1px solid var(--primary);">
+                Webspider
+            </div>
             <div class="user-info d-flex align-center">
                 <span id="user-display-name" class="mr-2"></span>
                 <button id="logout-btn" class="btn btn-outline btn-sm">Sign Out</button>
@@ -182,6 +189,33 @@
                     <button type="submit" class="btn btn-primary btn-block">Start Watching</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Deep Crawl Confirmation Modal -->
+    <div id="deep-crawl-modal" class="overlay" style="display: none; z-index: 2000;">
+        <div class="modal-card glass animate-scale-up"
+            style="border: 1px solid var(--danger); box-shadow: 0 0 20px rgba(239, 68, 68, 0.2); max-width: 450px;">
+            <div class="modal-header d-flex justify-between align-center mb-3">
+                <h3 style="color: var(--danger);">⚠️ Danger Zone</h3>
+                <button id="close-deep-crawl-btn" class="btn-close" type="button">&times;</button>
+            </div>
+            <p class="mb-3">
+                <strong>Deep Crawl</strong> instructs the bot to recursively visit all internal links on the website up
+                to 20 pages.
+            </p>
+            <p class="mb-4 text-secondary" style="font-size: 0.95em;">
+                This uses significant processing power and is computationally expensive. It should only be used in
+                specific scenarios where you need to track an entire site, not just a single page.
+                <br><br>
+                Are you sure you want to enable this heavy operation?
+            </p>
+            <div class="d-flex justify-end" style="gap: 12px;">
+                <button id="cancel-deep-crawl-btn" type="button" class="btn btn-outline"
+                    style="flex: 1;">Cancel</button>
+                <button id="confirm-deep-crawl-btn" type="button" class="btn btn-primary"
+                    style="background-color: var(--danger); flex: 1;">Yes, Enable</button>
+            </div>
         </div>
     </div>
 

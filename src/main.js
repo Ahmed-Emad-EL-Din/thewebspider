@@ -36,6 +36,12 @@ const telegramConnectedStatus = document.getElementById('telegram-connected-stat
 const telegramConnectPrompt = document.getElementById('telegram-connect-prompt');
 const telegramChatIdInput = document.getElementById('telegram-chat-id');
 
+// Deep Crawl Modal Elements
+const deepCrawlModal = document.getElementById('deep-crawl-modal');
+const closeDeepCrawlBtn = document.getElementById('close-deep-crawl-btn');
+const cancelDeepCrawlBtn = document.getElementById('cancel-deep-crawl-btn');
+const confirmDeepCrawlBtn = document.getElementById('confirm-deep-crawl-btn');
+
 // Telegram State
 let telegramPollingInterval = null;
 let telegramBotUsername = null;
@@ -117,8 +123,25 @@ closeModalBtn.addEventListener('click', () => {
     if (telegramPollingInterval) clearInterval(telegramPollingInterval);
 });
 
-deepCrawlCheck.addEventListener('change', (e) => {
-    deepCrawlAlert.style.display = e.target.checked ? 'block' : 'none';
+deepCrawlCheck.addEventListener('click', (e) => {
+    if (e.target.checked) {
+        // User clicked to enable. Prevent the check until confirmed!
+        e.preventDefault();
+        deepCrawlModal.style.display = 'flex';
+    } else {
+        // User clicked to disable. Let it happen and hide the alert.
+        deepCrawlAlert.style.display = 'none';
+    }
+});
+
+const hideDeepCrawlModal = () => { deepCrawlModal.style.display = 'none'; };
+closeDeepCrawlBtn.addEventListener('click', hideDeepCrawlModal);
+cancelDeepCrawlBtn.addEventListener('click', hideDeepCrawlModal);
+
+confirmDeepCrawlBtn.addEventListener('click', () => {
+    deepCrawlCheck.checked = true;
+    deepCrawlAlert.style.display = 'block';
+    hideDeepCrawlModal();
 });
 
 requiresLoginCheck.addEventListener('change', (e) => {
@@ -136,7 +159,17 @@ enableTelegramCheck.addEventListener('change', async (e) => {
         clearInterval(telegramPollingInterval);
         telegramChatIdInput.value = '';
         telegramConnectPrompt.style.display = 'block';
-        telegramConnectedStatus.style.display = 'none';
+        document.querySelector('#telegram-connect-prompt p').style.display = 'block';
+        telegramConnectBtn.className = "btn btn-outline btn-block";
+        telegramConnectBtn.style.backgroundColor = "";
+        telegramConnectBtn.style.borderColor = "";
+        telegramConnectBtn.style.color = "";
+        telegramConnectBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Connect Telegram App
+        `;
         return;
     }
 
@@ -181,9 +214,17 @@ enableTelegramCheck.addEventListener('change', async (e) => {
                 if (result.status === 'success' && result.chat_id) {
                     clearInterval(telegramPollingInterval);
                     telegramChatIdInput.value = result.chat_id;
-                    telegramConnectPrompt.style.display = 'none';
-                    telegramConnectedStatus.textContent = `✅ Linked successfully (ID: ${result.chat_id})`;
-                    telegramConnectedStatus.style.display = 'block';
+
+                    // Update the button directly instead of hiding it
+                    telegramConnectBtn.className = "btn btn-block"; // remove btn-outline
+                    telegramConnectBtn.style.backgroundColor = "var(--success)";
+                    telegramConnectBtn.style.borderColor = "var(--success)";
+                    telegramConnectBtn.style.color = "white";
+                    telegramConnectBtn.style.pointerEvents = "none";
+                    telegramConnectBtn.innerHTML = `✅ Connected successfully! (ID: ${result.chat_id})`;
+
+                    // Hide the instructional prompt paragraph, but keep the button
+                    document.querySelector('#telegram-connect-prompt p').style.display = 'none';
                 }
             }
         } catch (e) {
@@ -224,11 +265,24 @@ addMonitorForm.addEventListener('submit', async (e) => {
         loginFields.style.display = 'none';
         captchaFields.style.display = 'none';
         telegramFields.style.display = 'none';
+        deepCrawlAlert.style.display = 'none';
 
         if (telegramPollingInterval) clearInterval(telegramPollingInterval);
         telegramChatIdInput.value = '';
         telegramConnectPrompt.style.display = 'block';
-        telegramConnectedStatus.style.display = 'none';
+        document.querySelector('#telegram-connect-prompt p').style.display = 'block'; // restore prompt text
+
+        // Restore button generic state
+        telegramConnectBtn.className = "btn btn-outline btn-block";
+        telegramConnectBtn.style.backgroundColor = "";
+        telegramConnectBtn.style.borderColor = "";
+        telegramConnectBtn.style.color = "";
+        telegramConnectBtn.innerHTML = `
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Connect Telegram App
+        `;
 
         if (dashboardComp) await dashboardComp.load();
 
