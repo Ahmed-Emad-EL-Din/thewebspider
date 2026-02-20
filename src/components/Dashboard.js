@@ -47,11 +47,11 @@ export class Dashboard {
                     <p>${monitor.latest_ai_summary || 'Waiting for next run...'}</p>
                 </div>
                 <div class="monitor-footer">
-                    <div class="text-secondary" style="font-size: 0.75rem;">
-                        ${monitor.requires_login ? '🔑 Login ' : ''} 
-                        ${monitor.has_captcha ? '🍪 Cookies ' : ''}
-                        ${monitor.email_notifications_enabled ? '📧 Email ' : ''}
-                        ${monitor.telegram_notifications_enabled ? '✈️ Telegram' : ''}
+                    <div class="text-secondary" style="font-size: 0.75rem; display: flex; align-items: center; gap: 8px;">
+                        ${monitor.requires_login ? '<span>🔑 Login</span>' : ''} 
+                        ${monitor.has_captcha ? '<span>🍪 Cookies</span>' : ''}
+                        ${monitor.email_notifications_enabled ? '<span style="display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Email</span>' : ''}
+                        ${monitor.telegram_notifications_enabled ? '<span style="display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Telegram</span>' : ''}
                     </div>
                     <button class="delete-btn" onclick="deleteMonitor('${monitor._id}')">Delete</button>
                 </div>

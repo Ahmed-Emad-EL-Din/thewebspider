@@ -52,7 +52,7 @@ exports.handler = async (event, context) => {
             const botToken = process.env.TELEGRAM_BOT_TOKEN;
             const telegramUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
-            const message = `🚨 *TheWebspider Update*\n\n*Page:* ${url}\n\n*AI Summary:*\n${summary}`;
+            const message = `🚨 TheWebspider Update\n\nPage: ${url}\n\nAI Summary:\n${summary}`;
 
             try {
                 const response = await fetch(telegramUrl, {
@@ -60,8 +60,7 @@ exports.handler = async (event, context) => {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         chat_id: telegram_chat_id,
-                        text: message,
-                        parse_mode: 'Markdown'
+                        text: message
                     })
                 });
 
