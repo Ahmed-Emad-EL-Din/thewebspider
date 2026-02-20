@@ -6,6 +6,14 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        const providedSecret = event.headers.authorization || event.headers.Authorization;
+        const expectedSecret = `Bearer ${process.env.WEBHOOK_SECRET}`;
+
+        if (process.env.WEBHOOK_SECRET && providedSecret !== expectedSecret) {
+            console.warn("Unauthorized webhook attempt");
+            return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorized' }) };
+        }
+
         const { monitor, summary } = JSON.parse(event.body);
         const { url, user_email, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = monitor;
 

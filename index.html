@@ -5,20 +5,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Watcher | Premium Monitoring</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/src/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 
 <body class="dark-mode">
-    <!-- Login Overlay -->
-    <div id="login-overlay" class="overlay">
-        <div class="login-card animate-fade-in text-center">
+    <!-- Landing Page / Login Overlay -->
+    <div id="login-overlay" class="landing-page overlay">
+        <div class="landing-content animate-fade-in text-center">
             <div class="logo-large mb-2">👁️</div>
-            <h1>Web Watcher</h1>
-            <p class="text-secondary mb-3">Monitor web changes with AI-powered summaries.</p>
-            <div id="google-login-btn"></div>
+            <h1 class="hero-title">Web Watcher</h1>
+            <p class="hero-subtitle mb-4">Professional Web Monitoring & AI Diff Summarization.</p>
+
+            <div class="features-grid mb-4">
+                <div class="feature-box">
+                    <h3>🧠 AI Intelligent Summaries</h3>
+                    <p>Stop reading HTML diffs. Get concise human-readable alerts summarizing exactly what changed.</p>
+                </div>
+                <div class="feature-box">
+                    <h3>⚡ Multi-Channel Alerts</h3>
+                    <p>Instant delivery to your Inbox or Telegram the moment a shift occurs on your monitored pages.</p>
+                </div>
+                <div class="feature-box security-box">
+                    <h3>🔒 Bank-Grade Security</h3>
+                    <p>Session cookies and login credentials are encrypted in transit. Your automated session data is
+                        never exposed.</p>
+                </div>
+            </div>
+
+            <div class="auth-section">
+                <p class="text-secondary mb-2">Securely authenticate to access your dashboard</p>
+                <div id="google-login-btn"></div>
+            </div>
         </div>
     </div>
 
@@ -68,6 +88,20 @@
                 <div class="form-group mb-3">
                     <label for="target-url">Target URL</label>
                     <input type="url" id="target-url" placeholder="https://example.com/page-to-watch" required>
+                </div>
+
+                <div class="form-checkbox-group mb-3">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="deep-crawl">
+                        <span class="checkmark"></span>
+                        Enable Deep Crawl
+                        <span class="badge-experimental">Advanced</span>
+                    </label>
+                </div>
+
+                <div id="deep-crawl-alert" class="alert alert-danger mb-3 animate-slide-down" style="display: none;">
+                    <strong>HIGH ALERT:</strong> Deep Crawl instructs the bot to recursively click all links on the same
+                    domain up to 20 pages. This runs a heavy operation. Use sparingly!
                 </div>
 
                 <div class="form-checkbox-group mb-3">
@@ -123,11 +157,25 @@
                 </div>
 
                 <div id="telegram-fields" class="form-sub-section animate-slide-down mb-4" style="display: none;">
-                    <div class="form-group mb-2">
-                        <label for="telegram-chat-id">Telegram Chat ID</label>
-                        <input type="text" id="telegram-chat-id" placeholder="e.g. 123456789">
-                        <small class="text-secondary">Get this from @userinfobot or your own bot.</small>
+                    <div id="telegram-connect-prompt" class="mb-2">
+                        <p class="text-secondary mb-2" style="font-size: 0.9em;">Click below to securely link your
+                            Telegram account for instant alerts.</p>
+                        <a id="telegram-connect-btn" href="#" target="_blank" class="btn btn-outline btn-block"
+                            style="text-decoration:none; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5"
+                                    stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" />
+                            </svg>
+                            Connect Telegram App
+                        </a>
                     </div>
+                    <div id="telegram-connected-status" class="alert alert-success mb-2" style="display: none;">
+                        ✅ Linked successfully!
+                    </div>
+                    <!-- Hidden field to store the auto-retrieved Chat ID -->
+                    <input type="hidden" id="telegram-chat-id">
                 </div>
 
                 <div class="d-flex justify-end">
@@ -139,7 +187,7 @@
 
     <!-- Scripts -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="app.js"></script>
+    <script type="module" src="/src/main.js"></script>
 </body>
 
 </html>

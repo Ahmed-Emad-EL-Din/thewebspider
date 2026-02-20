@@ -7,7 +7,7 @@ exports.handler = async (event, context) => {
 
     try {
         const data = JSON.parse(event.body);
-        const { user_email, url, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
+        const { user_email, url, deep_crawl, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
 
         if (!user_email || !url) {
             return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
@@ -28,6 +28,7 @@ exports.handler = async (event, context) => {
         const newMonitor = {
             user_email,
             url,
+            deep_crawl: !!deep_crawl,
             requires_login: !!requires_login,
             has_captcha: !!has_captcha,
             username: username || '',
