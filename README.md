@@ -67,9 +67,10 @@ This section provides a rigorous, step-by-step guide for deploying the Web Watch
 4. **App Type**: Select "Web application".
 5. **Authorized JavaScript Origins**: Add your local development URL (e.g., `http://localhost:8888`) AND your future production URL (e.g., `https://your-custom-name.netlify.app`).
 6. **Capture ID**: Copy the generated "Client ID".
-7. **Code Setup**: Open the frontend repository code. You have two options to inject this ID:
-   - **Option A (Recommended)**: Set it as an environment variable named `VITE_GOOGLE_CLIENT_ID`.
-   - **Option B**: Directly paste it into `src/main.js` by replacing the `REPLACE_WITH_YOUR_CLIENT_ID.apps.googleusercontent.com` string.
+7. **Code Setup**: Because this frontend uses Vite, you **do not** paste this ID into the code directly. Instead:
+   - **For Local Development**: Open the `.env` file in the root of your project and add the following line:
+     `VITE_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com`
+   - **For Production (Netlify)**: Because your `.env` file is safely ignored by Git, you will need to add this exact same `VITE_GOOGLE_CLIENT_ID` variable in the Netlify Dashboard (explained in Phase 4).
 
 ### Phase 3: Notification Integrations
 
