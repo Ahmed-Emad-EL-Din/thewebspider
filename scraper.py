@@ -13,11 +13,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-MONGO_URI = os.getenv("MONGO_URI")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MONGO_URI = os.getenv("MONGO_URI", "").strip()
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 # Netlify URL for notifications
-NETLIFY_URL = os.getenv("NETLIFY_URL", "http://localhost:8888") # Default for local dev
-WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
+NETLIFY_URL = os.getenv("NETLIFY_URL", "http://localhost:8888").strip() # Default for local dev
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 
 # AI Setup
 genai.configure(api_key=GEMINI_API_KEY)
