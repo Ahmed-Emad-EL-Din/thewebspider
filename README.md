@@ -151,5 +151,4 @@ If you are developing locally and need to push to a specific GitHub profile:
 > [!CAUTION]
 > Rely on `.gitignore`. Ensure `.env` is fully excluded so raw credentials do not leak onto public repository pages.
 
----
-*Developed by Antigravity AI*
+

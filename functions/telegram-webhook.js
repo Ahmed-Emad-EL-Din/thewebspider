@@ -9,10 +9,7 @@ async function connectToDatabase() {
     if (cachedClient) {
         return cachedClient.db('thewebspider');
     }
-    const client = new MongoClient(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-    });
+    const client = new MongoClient(process.env.MONGO_URI);
     await client.connect();
     cachedClient = client;
     return client.db('thewebspider');
