@@ -7,7 +7,7 @@ import difflib
 from urllib.parse import urlparse, urljoin
 from pymongo import MongoClient
 from playwright.async_api import async_playwright
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,8 +20,7 @@ NETLIFY_URL = os.getenv("NETLIFY_URL", "http://localhost:8888").strip() # Defaul
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 
 # AI Setup
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 async def trigger_notifications(monitor_doc, summary):
     notify_url = f"{NETLIFY_URL}/.netlify/functions/notify"
@@ -81,7 +80,10 @@ async def summarize_changes(old_text, new_text):
     """
     
     try:
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+        )
         return response.text.strip()
     except Exception as e:
         print(f"Gemini API Error: {e}")
