@@ -103,7 +103,7 @@ This section provides a rigorous, step-by-step guide for deploying the Webspider
    - `EMAIL_PORT`
    - `EMAIL_HOST_USER`
    - `EMAIL_HOST_PASSWORD`
-4. **Deploy**: Click **Deploy site**. Once live, note the production URL (e.g., `https://your-watcher.netlify.app`).
+4. **Deploy**: Click **Deploy site**. Once live, note the production URL (e.g., `https://your-spider.netlify.app`).
 
 ### Phase 5: AI Scraper & Automation (GitHub Actions)
 1. **Gemini API Key**: Go to [Google AI Studio](https://aistudio.google.com/app/apikey) and generate a free API key. This is your `GEMINI_API_KEY`.
@@ -112,12 +112,12 @@ This section provides a rigorous, step-by-step guide for deploying the Webspider
 4. **Add Secrets**: Add the following secrets one by one:
    - `MONGO_URI` (Same as Netlify)
    - `GEMINI_API_KEY` (From AI Studio)
-   - `NETLIFY_URL` (The production URL from Phase 4, e.g., `https://your-watcher.netlify.app`)
+   - `NETLIFY_URL` (The production URL from Phase 4, e.g., `https://your-spider.netlify.app`)
 5. **Activate Automation**:
    - Go to the **Actions** tab in the GitHub repo.
    - Click "I understand my workflows, go ahead and enable them" (if prompted).
    - You can manually trigger the "Webspider Scraper" workflow to test it immediately.
-   - Otherwise, the cron job (`watcher.yml`) will run automatically every 10 minutes.
+   - Otherwise, the cron job (`spider.yml`) will run automatically every 10 minutes.
 
 ### 📤 Phase 6: Syncing Local Code to GitHub (For Multi-Account Users)
 If you are developing locally and need to push to a specific GitHub profile:
