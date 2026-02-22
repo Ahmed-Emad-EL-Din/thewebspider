@@ -132,12 +132,26 @@
                     <input type="url" id="target-url" placeholder="https://example.com/page-to-watch" required>
                 </div>
 
+                <div class="form-checkbox-group mb-3"
+                    style="background: rgba(220, 38, 38, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--danger);">
+                    <label class="checkbox-container" style="margin-bottom: 0;">
+                        <input type="checkbox" id="trigger-mode">
+                        <span class="checkmark"></span>
+                        <span style="color: var(--danger); font-weight: bold;">🎯 Sniper Bot Mode (Trigger
+                            Alerts)</span>
+                    </label>
+                    <small class="text-secondary d-block mt-1" style="margin-left: 28px;">If enabled, you will ONLY be
+                        notified if the AI Focus Note condition is strictly MET (e.g. "Price dropped below
+                        $50").</small>
+                </div>
+
                 <div class="form-group mb-3">
-                    <label for="ai-focus-note">🧠 AI Focus Note <span class="text-secondary"
+                    <label id="ai-focus-label" for="ai-focus-note">🧠 AI Focus Note <span class="text-secondary"
                             style="font-weight:normal; font-size:0.85em;">(Optional)</span></label>
                     <textarea id="ai-focus-note" rows="2"
                         placeholder="E.g., Notify me when a new assignment for the slides is uploaded, or when a new quiz is available."></textarea>
-                    <small class="text-secondary">Tell the AI what specific changes you care about.</small>
+                    <small id="ai-focus-help" class="text-secondary">Tell the AI what specific changes you care
+                        about.</small>
                 </div>
 
                 <div class="form-checkbox-group mb-3">

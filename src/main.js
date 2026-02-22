@@ -26,6 +26,9 @@ const modalTitle = document.getElementById('modal-title');
 const submitBtn = document.getElementById('submit-monitor-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const addMonitorForm = document.getElementById('add-monitor-form');
+const triggerModeCheck = document.getElementById('trigger-mode');
+const aiFocusLabel = document.getElementById('ai-focus-label');
+const aiFocusHelp = document.getElementById('ai-focus-help');
 const aiFocusNoteInput = document.getElementById('ai-focus-note');
 const deepCrawlCheck = document.getElementById('deep-crawl');
 const deepCrawlOptions = document.getElementById('deep-crawl-options');
@@ -172,6 +175,11 @@ function resetModalContent() {
     modalTitle.textContent = "Add New TheWebspider";
     submitBtn.textContent = "Start Watching";
     addMonitorForm.reset();
+
+    // Reset Trigger Mode visual state
+    aiFocusLabel.innerHTML = `🧠 AI Focus Note <span class="text-secondary" style="font-weight:normal; font-size:0.85em;">(Optional)</span>`;
+    aiFocusHelp.textContent = "Tell the AI what specific changes you care about.";
+
     loginFields.style.display = 'none';
     captchaFields.style.display = 'none';
     telegramFields.style.display = 'none';
@@ -213,6 +221,13 @@ window.addEventListener('open-edit-modal', (e) => {
     submitBtn.textContent = "Save Changes";
 
     targetUrlInput.value = monitor.url;
+
+    if (monitor.trigger_mode_enabled) {
+        triggerModeCheck.checked = true;
+        aiFocusLabel.innerHTML = `🎯 Trigger Condition <span style="color:var(--danger); font-weight:normal; font-size:0.85em;">(Required)</span>`;
+        aiFocusHelp.textContent = "The bot will ONLY alert you if this condition is fully met.";
+    }
+
     if (monitor.ai_focus_note) aiFocusNoteInput.value = monitor.ai_focus_note;
 
     if (monitor.deep_crawl) {
@@ -258,6 +273,18 @@ window.addEventListener('open-edit-modal', (e) => {
 closeModalBtn.addEventListener('click', () => {
     monitorModal.style.display = 'none';
     if (telegramPollingInterval) clearInterval(telegramPollingInterval);
+});
+
+triggerModeCheck.addEventListener('change', (e) => {
+    if (e.target.checked) {
+        aiFocusLabel.innerHTML = `🎯 Trigger Condition <span style="color:var(--danger); font-weight:normal; font-size:0.85em;">(Required)</span>`;
+        aiFocusHelp.textContent = "The bot will ONLY alert you if this condition is fully met.";
+        if (!aiFocusNoteInput.value) aiFocusNoteInput.placeholder = "E.g., The price dropped below $50";
+    } else {
+        aiFocusLabel.innerHTML = `🧠 AI Focus Note <span class="text-secondary" style="font-weight:normal; font-size:0.85em;">(Optional)</span>`;
+        aiFocusHelp.textContent = "Tell the AI what specific changes you care about.";
+        aiFocusNoteInput.placeholder = "E.g., Notify me when a new assignment for the slides is uploaded, or when a new quiz is available.";
+    }
 });
 
 deepCrawlCheck.addEventListener('click', (e) => {
@@ -382,6 +409,7 @@ addMonitorForm.addEventListener('submit', async (e) => {
         user_email: userProfile.email,
         url: targetUrlInput.value,
         ai_focus_note: aiFocusNoteInput ? aiFocusNoteInput.value.trim() : '',
+        trigger_mode_enabled: triggerModeCheck.checked,
         deep_crawl: deepCrawlCheck.checked,
         deep_crawl_depth: deepCrawlDepthInput ? parseInt(deepCrawlDepthInput.value, 10) : 1,
         requires_login: requiresLoginCheck.checked,

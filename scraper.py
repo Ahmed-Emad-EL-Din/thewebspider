@@ -50,11 +50,42 @@ async def trigger_notifications(monitor_doc, summary):
     except Exception as e:
         print(f"Error calling notification function: {e}")
 
-async def summarize_changes(old_text, new_text, ai_focus_note=""):
-    # Calculate differences
+async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_enabled=False):
+    # If Trigger Mode is enabled, we completely bypass diffing the old/new text.
+    # We strictly evaluate the NEW text against the user's condition.
+    if trigger_mode_enabled and ai_focus_note:
+        prompt = f"""
+        You are a highly analytical 'Sniper Bot'. Your job is to evaluate if a strictly defined Trigger Condition has been met on a webpage.
+        
+        TRIGGER CONDITION:
+        {ai_focus_note}
+        
+        CURRENT WEBPAGE TEXT:
+        {new_text[:25000]} # Limit to prevent token overflow, 25k chars is ~6k tokens
+        
+        Evaluate the webpage text. Has the TRIGGER CONDITION been met?
+        If YES, reply EXACTLY starting with "TRUE", followed by a new line and a very brief 1-sentence explanation of what you found.
+        If NO, reply EXACTLY starting with "FALSE", followed by nothing else.
+        """
+        try:
+            await asyncio.sleep(2)
+            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            result_text = response.text.strip()
+            
+            if result_text.startswith("TRUE"):
+                # Strip the "TRUE" to leave just the explanation
+                explanation = result_text[4:].strip()
+                return f"🎯 SNIPER TRIGGER MET: {explanation}"
+            else:
+                return "TRIGGER_NOT_MET"
+                
+        except Exception as e:
+            print(f"Gemini API Error (Sniper Mode): {e}")
+            return "TRIGGER_NOT_MET" # Fail safely
+
+    # --- Standard Diff Mode Below ---
     differ = difflib.ndiff(old_text.splitlines(), new_text.splitlines())
     
-    # Extract only added and removed lines to send to the AI
     diff_lines = []
     for line in differ:
         if line.startswith('+ ') or line.startswith('- '):
@@ -62,7 +93,6 @@ async def summarize_changes(old_text, new_text, ai_focus_note=""):
             
     diff_text = "\n".join(diff_lines)
     
-    # Fallback to prevent token exhaustion if a page completely changes structure
     if len(diff_text) > 15000:
         diff_text = diff_text[:15000] + "\n...(diff truncated)"
 
@@ -82,7 +112,6 @@ async def summarize_changes(old_text, new_text, ai_focus_note=""):
     """
     
     try:
-        # Add a small delay to avoid hitting Gemini rate limits too quickly on concurrent summaries
         await asyncio.sleep(2)
         response = client.models.generate_content(
             model='gemini-2.5-flash',
@@ -91,7 +120,6 @@ async def summarize_changes(old_text, new_text, ai_focus_note=""):
         return response.text.strip()
     except Exception as e:
         print(f"Gemini API Error: {e}")
-        # Wait a bit longer and retry once if it's a rate limit or transient error
         await asyncio.sleep(5)
         try:
             response = client.models.generate_content(
@@ -284,12 +312,13 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
             return
         
         ai_focus_note = monitor.get('ai_focus_note', '')
+        trigger_mode_enabled = monitor.get('trigger_mode_enabled', False)
 
         if monitor.get('is_first_run'):
             print(f"First run for {monitor['url']}. Saving base text.")
             
             # For the first run, generate an initial baseline summary
-            summary = await summarize_changes("No previous content. This is the first time the page is being scanned.", new_text, ai_focus_note)
+            summary = await summarize_changes("No previous content. This is the first time the page is being scanned.", new_text, ai_focus_note, trigger_mode_enabled)
             
             monitors_col.update_one(
                 {"_id": monitor["_id"]},
@@ -303,41 +332,69 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
                 }
             )
             
-            # Send notification for the first run
-            await trigger_notifications(monitor, summary)
+            # Send notification for the first run if it's NOT a silent trigger initialization
+            if summary != "TRIGGER_NOT_MET":
+                await trigger_notifications(monitor, summary)
         else:
-            old_text = monitor.get('last_scraped_text', '')
-            
-            if old_text != new_text:
-                print(f"Changes detected on {monitor['url']}")
-                summary = await summarize_changes(old_text, new_text, ai_focus_note)
+            # Handle Sniper Trigger Mode
+            if trigger_mode_enabled:
+                print(f"Evaluating Trigger Mode for {monitor['url']}")
+                summary = await summarize_changes("", new_text, ai_focus_note, trigger_mode_enabled)
                 
-                if "No significant changes" not in summary:
-                    monitors_col.update_one(
+                if summary != "TRIGGER_NOT_MET":
+                     monitors_col.update_one(
                         {"_id": monitor["_id"]},
                         {
                             "$set": {
-                                "last_scraped_text": new_text,
+                                "last_scraped_text": new_text, # update text to prevent endless re-triggers for the exact same state (optional, but good practice)
                                 "latest_ai_summary": summary,
                                 "last_updated_timestamp": datetime.datetime.now()
                             }
                         }
                     )
-                    
-                    # Trigger notifications via Netlify
-                    await trigger_notifications(monitor, summary)
+                     await trigger_notifications(monitor, summary)
                 else:
-                    print(f"AI determined changes were not significant for {monitor['url']}.")
+                    print(f"Sniper Trigger NOT met for {monitor['url']}.")
+                    # Update timestamp so user knows it checked, but silent
                     monitors_col.update_one(
                         {"_id": monitor["_id"]},
                         {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
                     )
+
+            # Handle Standard Mode
             else:
-                print(f"No changes on {monitor['url']}")
-                monitors_col.update_one(
-                    {"_id": monitor["_id"]},
-                    {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
-                )
+                old_text = monitor.get('last_scraped_text', '')
+                
+                if old_text != new_text:
+                    print(f"Changes detected on {monitor['url']}")
+                    summary = await summarize_changes(old_text, new_text, ai_focus_note, trigger_mode_enabled)
+                    
+                    if "No significant changes" not in summary:
+                        monitors_col.update_one(
+                            {"_id": monitor["_id"]},
+                            {
+                                "$set": {
+                                    "last_scraped_text": new_text,
+                                    "latest_ai_summary": summary,
+                                    "last_updated_timestamp": datetime.datetime.now()
+                                }
+                            }
+                        )
+                        
+                        # Trigger notifications via Netlify
+                        await trigger_notifications(monitor, summary)
+                    else:
+                        print(f"AI determined changes were not significant for {monitor['url']}.")
+                        monitors_col.update_one(
+                            {"_id": monitor["_id"]},
+                            {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
+                        )
+                else:
+                    print(f"No changes on {monitor['url']}")
+                    monitors_col.update_one(
+                        {"_id": monitor["_id"]},
+                        {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
+                    )
 
 async def run_worker():
     client = MongoClient(MONGO_URI)
