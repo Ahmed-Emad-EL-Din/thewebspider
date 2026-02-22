@@ -233,16 +233,54 @@ async def scrape_monitor(context, monitor_doc, monitors_col):
 
 async def process_monitor(monitor, browser, monitors_col, semaphore):
     async with semaphore:
+        # Check if Admin Paused this monitor
+        if monitor.get('is_paused', False):
+            print(f"Skipping {monitor['url']} (Paused by Admin)")
+            return
+
         # Create an isolated browser context per monitor
         context = await browser.new_context(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
         )
         try:
             new_text = await scrape_monitor(context, monitor, monitors_col)
+            
+            # If we reach here and new_text is not None, the scrape was a success
+            if new_text is not None:
+                monitors_col.update_one(
+                    {"_id": monitor["_id"]},
+                    {"$set": {
+                        "last_run_status": "success",
+                        "last_error": None
+                    }}
+                )
+        except Exception as e:
+            # Catch severe, unhandled failures that bubble up
+            error_msg = str(e)
+            print(f"CRITICAL FAILURE scraping {monitor.get('url')}: {error_msg}")
+            
+            monitors_col.update_one(
+                {"_id": monitor["_id"]},
+                {"$set": {
+                    "last_run_status": "failed",
+                    "last_error": error_msg,
+                    "last_error_time": datetime.datetime.now()
+                }}
+            )
+            return
         finally:
             await context.close()
             
         if new_text is None:
+            # Means `scrape_monitor` caught the error internally and returned None
+            monitors_col.update_one(
+                {"_id": monitor["_id"]},
+                {"$set": {
+                    "last_run_status": "failed",
+                    "last_error": "Failed during internal page navigation or scraping details",
+                    "last_error_time": datetime.datetime.now()
+                }}
+            )
             return
         
         ai_focus_note = monitor.get('ai_focus_note', '')

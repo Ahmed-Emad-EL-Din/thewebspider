@@ -1,12 +1,13 @@
 import { decodeJwtResponse } from './auth';
 import { Dashboard } from './components/Dashboard';
 import { Toast } from './components/Toast';
-import { addMonitorApi } from './api';
+import { addMonitorApi, editMonitorApi, checkAdminApi, getAdminStatsApi, toggleMonitorApi } from './api';
 
 // Globals
 let userProfile = null;
 let dashboardComp = null;
 const LIMIT = 10;
+let isAdminUser = false;
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "REPLACE_WITH_YOUR_CLIENT_ID.apps.googleusercontent.com";
 
 // DOM Elements
@@ -21,6 +22,8 @@ const monitorLimitWarning = document.getElementById('monitor-limit-warning');
 
 // Modal Elements
 const monitorModal = document.getElementById('monitor-modal');
+const modalTitle = document.getElementById('modal-title');
+const submitBtn = document.getElementById('submit-monitor-btn');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const addMonitorForm = document.getElementById('add-monitor-form');
 const aiFocusNoteInput = document.getElementById('ai-focus-note');
@@ -44,6 +47,14 @@ const deepCrawlModal = document.getElementById('deep-crawl-modal');
 const closeDeepCrawlBtn = document.getElementById('close-deep-crawl-btn');
 const cancelDeepCrawlBtn = document.getElementById('cancel-deep-crawl-btn');
 const confirmDeepCrawlBtn = document.getElementById('confirm-deep-crawl-btn');
+
+// Form Modifiers
+const targetUrlInput = document.getElementById('target-url');
+const usernameInput = document.getElementById('username');
+const passwordInput = document.getElementById('password');
+const captchaJsonInput = document.getElementById('captcha-json');
+const enableNotificationsCheck = document.getElementById('enable-notifications');
+let editingMonitorId = null; // null = Add Mode, string = Edit Mode
 
 // Telegram State
 let telegramPollingInterval = null;
@@ -91,29 +102,45 @@ window.onload = function () {
     }
 };
 
-function handleCredentialResponse(response) {
+// --- Auth & Init ---
+window.handleCredentialResponse = async (response) => {
     try {
-        const responsePayload = decodeJwtResponse(response.credential);
+        const payload = decodeJwtResponse(response.credential);
         userProfile = {
-            name: responsePayload.name,
-            email: responsePayload.email,
-            picture: responsePayload.picture
+            name: payload.name,
+            email: payload.email,
+            picture: payload.picture
         };
         localStorage.setItem('userProfile', JSON.stringify(userProfile));
-        showDashboard();
-    } catch (e) {
-        Toast.error("Authentication failed. Please try again.");
-    }
-}
 
-function showDashboard() {
+        // Use standard load function
+        await showDashboard();
+
+    } catch (error) {
+        console.error("Login failed:", error);
+        Toast.error("Login failed. Please try again.");
+    }
+};
+
+async function showDashboard() {
     loginOverlay.style.display = 'none';
     mainHeader.style.display = 'block';
     dashboardEl.style.display = 'block';
-    userDisplayName.textContent = userProfile.name;
+
+    // Switch user display layout
+    userDisplayName.style.display = 'none'; // Hide old element if it still exists
+    document.getElementById('user-actions').style.display = 'flex';
+    document.getElementById('user-email-display').textContent = userProfile.email;
+
     Toast.success(`Welcome, ${userProfile.name}`);
 
     dashboardComp = new Dashboard(userProfile, updateLimitUI);
+
+    // Check Admin Status
+    isAdminUser = await checkAdminApi(userProfile.email);
+    if (isAdminUser) {
+        document.getElementById('admin-panel-btn').style.display = 'block';
+    }
     dashboardComp.load();
 }
 
@@ -140,10 +167,92 @@ function logout() {
 logoutBtn.addEventListener('click', logout);
 
 // --- Modal Logic ---
+function resetModalContent() {
+    editingMonitorId = null;
+    modalTitle.textContent = "Add New TheWebspider";
+    submitBtn.textContent = "Start Watching";
+    addMonitorForm.reset();
+    loginFields.style.display = 'none';
+    captchaFields.style.display = 'none';
+    telegramFields.style.display = 'none';
+    deepCrawlOptions.style.display = 'none';
+    deepCrawlAlert.style.display = 'none';
+
+    if (telegramPollingInterval) clearInterval(telegramPollingInterval);
+    telegramChatIdInput.value = '';
+    telegramConnectPrompt.style.display = 'block';
+
+    let p = document.querySelector('#telegram-connect-prompt p');
+    if (p) p.style.display = 'block';
+
+    telegramConnectBtn.className = "btn btn-outline btn-block";
+    telegramConnectBtn.style.backgroundColor = "";
+    telegramConnectBtn.style.borderColor = "";
+    telegramConnectBtn.style.color = "";
+    telegramConnectBtn.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Connect Telegram App
+    `;
+}
+
 addMonitorBtn.addEventListener('click', () => {
     if (dashboardComp && dashboardComp.monitors.length < LIMIT) {
+        resetModalContent();
         monitorModal.style.display = 'flex';
     }
+});
+
+window.addEventListener('open-edit-modal', (e) => {
+    const monitor = e.detail;
+    resetModalContent();
+
+    editingMonitorId = monitor._id;
+    modalTitle.textContent = "Edit Webspider";
+    submitBtn.textContent = "Save Changes";
+
+    targetUrlInput.value = monitor.url;
+    if (monitor.ai_focus_note) aiFocusNoteInput.value = monitor.ai_focus_note;
+
+    if (monitor.deep_crawl) {
+        deepCrawlCheck.checked = true;
+        deepCrawlOptions.style.display = 'block';
+        if (monitor.deep_crawl_depth) deepCrawlDepthInput.value = monitor.deep_crawl_depth;
+    }
+
+    if (monitor.requires_login) {
+        requiresLoginCheck.checked = true;
+        loginFields.style.display = 'block';
+        if (monitor.username) usernameInput.value = monitor.username;
+        if (monitor.password) passwordInput.value = monitor.password;
+    }
+
+    if (monitor.has_captcha) {
+        hasCaptchaCheck.checked = true;
+        captchaFields.style.display = 'block';
+        if (monitor.captcha_json) captchaJsonInput.value = typeof monitor.captcha_json === 'string' ? monitor.captcha_json : JSON.stringify(monitor.captcha_json);
+    }
+
+    enableNotificationsCheck.checked = !!monitor.email_notifications_enabled;
+
+    if (monitor.telegram_notifications_enabled) {
+        enableTelegramCheck.checked = true;
+        telegramFields.style.display = 'block';
+        telegramChatIdInput.value = monitor.telegram_chat_id || '';
+
+        // Show as connected since we already have the ID
+        if (monitor.telegram_chat_id) {
+            telegramConnectBtn.className = "btn btn-block";
+            telegramConnectBtn.style.backgroundColor = "var(--success)";
+            telegramConnectBtn.style.color = "white";
+            telegramConnectBtn.innerHTML = `✅ Connected successfully! (ID: ${monitor.telegram_chat_id})`;
+            let p = document.querySelector('#telegram-connect-prompt p');
+            if (p) p.style.display = 'none';
+        }
+    }
+
+    monitorModal.style.display = 'flex';
 });
 
 closeModalBtn.addEventListener('click', () => {
@@ -271,16 +380,16 @@ addMonitorForm.addEventListener('submit', async (e) => {
 
     const formData = {
         user_email: userProfile.email,
-        url: document.getElementById('target-url').value,
+        url: targetUrlInput.value,
         ai_focus_note: aiFocusNoteInput ? aiFocusNoteInput.value.trim() : '',
         deep_crawl: deepCrawlCheck.checked,
         deep_crawl_depth: deepCrawlDepthInput ? parseInt(deepCrawlDepthInput.value, 10) : 1,
         requires_login: requiresLoginCheck.checked,
-        username: document.getElementById('username').value,
-        password: document.getElementById('password').value,
+        username: usernameInput.value,
+        password: passwordInput.value,
         has_captcha: hasCaptchaCheck.checked,
-        captcha_json: document.getElementById('captcha-json').value,
-        email_notifications_enabled: document.getElementById('enable-notifications').checked,
+        captcha_json: captchaJsonInput.value,
+        email_notifications_enabled: enableNotificationsCheck.checked,
         telegram_notifications_enabled: enableTelegramCheck.checked,
         telegram_chat_id: document.getElementById('telegram-chat-id').value
     };
@@ -291,49 +400,31 @@ addMonitorForm.addEventListener('submit', async (e) => {
     }
 
     try {
-        const addBtn = addMonitorForm.querySelector('button[type="submit"]');
-        const origText = addBtn.textContent;
-        addBtn.textContent = 'Adding...';
-        addBtn.disabled = true;
+        const origText = submitBtn.textContent;
+        submitBtn.textContent = editingMonitorId ? 'Saving...' : 'Adding...';
+        submitBtn.disabled = true;
 
-        await addMonitorApi(formData);
+        if (editingMonitorId) {
+            formData.id = editingMonitorId;
+            await editMonitorApi(formData);
+            Toast.success("Monitor updated successfully!");
+        } else {
+            await addMonitorApi(formData);
+            Toast.success("Monitor added successfully!");
+        }
 
-        Toast.success("Monitor added successfully!");
         monitorModal.style.display = 'none';
-        addMonitorForm.reset();
-        loginFields.style.display = 'none';
-        captchaFields.style.display = 'none';
-        telegramFields.style.display = 'none';
-        deepCrawlOptions.style.display = 'none';
-        deepCrawlAlert.style.display = 'none';
-
-        if (telegramPollingInterval) clearInterval(telegramPollingInterval);
-        telegramChatIdInput.value = '';
-        telegramConnectPrompt.style.display = 'block';
-        document.querySelector('#telegram-connect-prompt p').style.display = 'block'; // restore prompt text
-
-        // Restore button generic state
-        telegramConnectBtn.className = "btn btn-outline btn-block";
-        telegramConnectBtn.style.backgroundColor = "";
-        telegramConnectBtn.style.borderColor = "";
-        telegramConnectBtn.style.color = "";
-        telegramConnectBtn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Connect Telegram App
-        `;
+        resetModalContent();
 
         if (dashboardComp) await dashboardComp.load();
 
-        addBtn.textContent = origText;
-        addBtn.disabled = false;
+        submitBtn.textContent = origText;
+        submitBtn.disabled = false;
 
     } catch (error) {
         console.error(error);
-        Toast.error(error.message || "Failed to add monitor");
-        const addBtn = addMonitorForm.querySelector('button[type="submit"]');
-        addBtn.textContent = 'Start Watching';
-        addBtn.disabled = false;
+        Toast.error(error.message || "Failed to process monitor");
+        submitBtn.textContent = editingMonitorId ? 'Save Changes' : 'Start Watching';
+        submitBtn.disabled = false;
     }
 });

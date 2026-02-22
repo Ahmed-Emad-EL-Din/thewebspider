@@ -25,3 +25,38 @@ export async function addMonitorApi(formData) {
     }
     return result;
 }
+
+export async function editMonitorApi(formData) {
+    const response = await fetch('/.netlify/functions/edit-monitor', {
+        method: 'PUT',
+        body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.error || 'Failed to update monitor');
+    }
+    return result;
+}
+
+export async function checkAdminApi(email) {
+    const response = await fetch(`/.netlify/functions/check-admin?email=${encodeURIComponent(email)}`);
+    if (!response.ok) return false;
+    const data = await response.json();
+    return !!data.is_admin;
+}
+
+export async function getAdminStatsApi(email) {
+    const response = await fetch(`/.netlify/functions/admin-stats?email=${encodeURIComponent(email)}`);
+    if (!response.ok) throw new Error('Unauthorized or failed to fetch stats');
+    return await response.json();
+}
+
+export async function toggleMonitorApi(adminEmail, id, isPaused) {
+    const response = await fetch('/.netlify/functions/toggle-monitor', {
+        method: 'POST',
+        body: JSON.stringify({ admin_email: adminEmail, id, is_paused: isPaused })
+    });
+    if (!response.ok) throw new Error('Failed to toggle monitor state');
+    return await response.json();
+}

@@ -9,8 +9,11 @@ export class Dashboard {
         this.monitors = [];
         this.LIMIT = 10;
 
-        // Expose global delete for the onclick handler in HTML
+        this.LIMIT = 10;
+
+        // Expose global methods for the onclick handler in HTML strings
         window.deleteMonitor = this.deleteMonitor.bind(this);
+        window.editMonitor = this.editMonitor.bind(this);
     }
 
     async load() {
@@ -55,7 +58,10 @@ export class Dashboard {
                         ${monitor.email_notifications_enabled ? '<span style="display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Email</span>' : ''}
                         ${monitor.telegram_notifications_enabled ? '<span style="display:flex; align-items:center; gap:4px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Telegram</span>' : ''}
                     </div>
-                    <button class="delete-btn" onclick="deleteMonitor('${monitor._id}')">Delete</button>
+                    <div style="display:flex; gap:10px;">
+                        <button class="edit-btn btn-outline btn-sm" onclick="editMonitor('${monitor._id}')" style="font-size: 0.8rem; padding: 4px 10px;">Edit</button>
+                        <button class="delete-btn" onclick="deleteMonitor('${monitor._id}')">Delete</button>
+                    </div>
                 </div>
             `;
             this.monitorsGrid.appendChild(card);
@@ -73,5 +79,14 @@ export class Dashboard {
             console.error(error);
             Toast.error("Failed to delete monitor");
         }
+    }
+
+    editMonitor(id) {
+        // Find the full monitor object
+        const monitor = this.monitors.find(m => m._id === id);
+        if (!monitor) return;
+
+        // Dispatch custom event to let main.js open the modal with data
+        window.dispatchEvent(new CustomEvent('open-edit-modal', { detail: monitor }));
     }
 }

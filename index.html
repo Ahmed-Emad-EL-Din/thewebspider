@@ -49,13 +49,11 @@
     <!-- Main Dashboard -->
     <header class="main-header glass animate-slide-down" style="display: none;">
         <div class="container d-flex justify-between align-center">
-            <div class="logo d-flex align-center">
-                <img src="/spider-bg-logo.png" alt="Logo"
-                    style="width: 28px; height: 28px; border-radius: 50%; margin-right: 10px; object-fit: cover; border: 1px solid var(--primary);">
-                TheWebspider
-            </div>
-            <div class="user-info d-flex align-center">
-                <span id="user-display-name" class="mr-2"></span>
+            <div class="logo">🕸️ WebWatcher</div>
+            <div id="user-actions" style="display: none; align-items: center; gap: 1rem;">
+                <span id="user-email-display" class="text-secondary" style="font-size: 0.9rem;"></span>
+                <button id="admin-panel-btn" class="btn btn-outline btn-sm"
+                    style="display: none; border-color: var(--warning); color: var(--warning);">Admin Panel</button>
                 <button id="logout-btn" class="btn btn-outline btn-sm">Sign Out</button>
             </div>
         </div>
@@ -76,12 +74,48 @@
             ⚠️ You have reached the maximum limit of 10 monitored pages.
         </div>
 
-        <div id="monitors-grid" class="monitors-grid">
-            <!-- Monitor items will be injected here -->
-            <div class="loading-state">
-                <div class="loader"></div>
-                <p>Loading your monitors...</p>
+        <div id="monitors-grid" class="monitors-grid"></div>
+    </main>
+
+    <!-- ADMIN DASHBOARD (Hidden by default) -->
+    <main id="admin-dashboard" class="container" style="display: none; padding-top: 2rem;">
+        <div class="d-flex justify-between align-center mb-4">
+            <h2>👑 Admin Dashboard</h2>
+            <button id="back-to-app-btn" class="btn btn-outline">Back to App</button>
+        </div>
+
+        <div class="admin-stats-grid mb-4">
+            <div class="stat-card">
+                <h3>Total Users</h3>
+                <div class="stat-value" id="admin-total-users">-</div>
             </div>
+            <div class="stat-card">
+                <h3>Active Monitors</h3>
+                <div class="stat-value" id="admin-total-monitors">-</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid var(--danger);">
+                <h3>Failed Runs</h3>
+                <div class="stat-value text-danger" id="admin-total-failed">-</div>
+            </div>
+        </div>
+
+        <div class="admin-table-container glass" style="padding: 1rem; border-radius: 8px;">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>User Email</th>
+                        <th>Target URL</th>
+                        <th>Status</th>
+                        <th>Error Msg</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="admin-table-body">
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary py-4">Loading stats...</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </main>
 
@@ -89,7 +123,7 @@
     <div id="monitor-modal" class="overlay" style="display: none;">
         <div class="modal-card glass animate-scale-up">
             <div class="modal-header d-flex justify-between align-center mb-3">
-                <h3>Add New TheWebspider</h3>
+                <h3 id="modal-title">Add New TheWebspider</h3>
                 <button id="close-modal-btn" class="btn-close">&times;</button>
             </div>
             <form id="add-monitor-form">
