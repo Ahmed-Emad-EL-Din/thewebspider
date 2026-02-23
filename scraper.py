@@ -45,7 +45,7 @@ async def trigger_notifications(monitor_doc, summary, image_path=None):
             with open(image_path, "rb") as f:
                 tg_res = requests.post(tg_url, data={
                     "chat_id": chat_id,
-                    "caption": f"🚨 **Visual Update Detected!**\n\n{summary}\n\nURL: {monitor_doc['url']}",
+                    "caption": f"🚨 **Visual Update Detected!**\n\nAccount: {monitor_doc['user_email']}\n\n{summary}\n\nURL: {monitor_doc['url']}",
                     "parse_mode": "Markdown"
                 }, files={"photo": f}, timeout=15)
                 
@@ -89,7 +89,7 @@ async def trigger_notifications(monitor_doc, summary, image_path=None):
             "content": f"🚨 **Update Detected:** {monitor_doc['url']}",
             "embeds": [{
                 "title": "Web Spider Alert",
-                "description": summary,
+                "description": f"**Account:** {monitor_doc['user_email']}\n\n{summary}",
                 "color": 16711680 # Red
             }]
         }
@@ -153,7 +153,7 @@ def compare_images(img_path1, img_path2):
          print(f"Image Compare Error: {e}")
          return 0.0 # Safety fallback
 
-async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_enabled=False):
+async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_enabled=False, image_path=None):
     # If Trigger Mode is enabled, we completely bypass diffing the old/new text.
     # We strictly evaluate the NEW text against the user's condition.
     if trigger_mode_enabled and ai_focus_note:
@@ -166,13 +166,22 @@ async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_e
         CURRENT WEBPAGE TEXT:
         {new_text[:25000]} # Limit to prevent token overflow, 25k chars is ~6k tokens
         
-        Evaluate the webpage text. Has the TRIGGER CONDITION been met?
+        Evaluate the webpage. Has the TRIGGER CONDITION been met?
         If YES, reply EXACTLY starting with "TRUE", followed by a new line and a very brief 1-sentence explanation of what you found.
         If NO, reply EXACTLY starting with "FALSE", followed by nothing else.
         """
+        
+        contents_payload = [prompt]
+        if image_path and os.path.exists(image_path):
+            try:
+                img = Image.open(image_path)
+                contents_payload.append(img)
+            except Exception as e:
+                print(f"Error loading image for Gemini Trigger: {e}")
+                
         try:
             await asyncio.sleep(2)
-            response = client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
+            response = client.models.generate_content(model='gemini-2.5-flash', contents=contents_payload)
             result_text = response.text.strip()
             
             if result_text.startswith("TRUE"):
@@ -214,11 +223,19 @@ async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_e
     {diff_text}
     """
     
+    contents_payload = [prompt]
+    if image_path and os.path.exists(image_path):
+        try:
+            img = Image.open(image_path)
+            contents_payload.append(img)
+        except Exception as e:
+            print(f"Error loading image for Gemini Diff: {e}")
+            
     try:
         await asyncio.sleep(2)
         response = client.models.generate_content(
             model='gemini-2.5-flash',
-            contents=prompt,
+            contents=contents_payload,
         )
         return response.text.strip()
     except Exception as e:
@@ -227,7 +244,7 @@ async def summarize_changes(old_text, new_text, ai_focus_note="", trigger_mode_e
         try:
             response = client.models.generate_content(
                 model='gemini-2.5-flash',
-                contents=prompt,
+                contents=contents_payload,
             )
             return response.text.strip()
         except Exception as retry_e:
@@ -450,6 +467,7 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
         
         ai_focus_note = monitor.get('ai_focus_note', '')
         trigger_mode_enabled = monitor.get('trigger_mode_enabled', False)
+        old_text = monitor.get('last_scraped_text', '')
 
         if monitor.get('is_first_run'):
             print(f"First run for {monitor['url']}. Saving base text.")
@@ -479,102 +497,102 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
                     os.remove(last_screenshot_path)
                 os.rename(current_screenshot_path, last_screenshot_path)
         else:
+            is_significant = False
+            visual_changed = False
+            ai_summary = None
+
             # Handle Visual Screen Monitoring Mode
             if visual_mode_enabled:
                 print(f"Evaluating Visual Output for {monitor['url']}")
                 
                 # Compare the new screenshot against the old one
-                percent_diff = compare_images(last_screenshot_path, current_screenshot_path)
-                print(f"Visual Diff Percentage: {percent_diff:.2f}%")
-                
-                if percent_diff > 1.0: # 1% threshold
-                    summary = f"📸 VISUAL CHANGE DETECTED: {percent_diff:.2f}% of the screen has changed."
+                if os.path.exists(last_screenshot_path) and os.path.exists(current_screenshot_path):
+                    percent_diff = compare_images(last_screenshot_path, current_screenshot_path)
+                    print(f"Visual Diff Percentage: {percent_diff:.2f}%")
                     
-                    monitors_col.update_one(
-                        {"_id": monitor["_id"]},
-                        {
-                            "$set": {
-                                "last_scraped_text": new_text,
-                                "latest_ai_summary": summary,
-                                "last_updated_timestamp": datetime.datetime.now()
-                            }
+                    if percent_diff > 1.0: # 1% threshold
+                        visual_changed = True
+                        is_significant = True
+                        ai_summary = f"📸 VISUAL CHANGE DETECTED: {percent_diff:.2f}% of the screen has changed."
+                        
+                        # Pass the fresh screenshot to Gemini for analysis!
+                        try:
+                            print(f"Requesting Gemini vision analysis for the visual diff...")
+                            ai_summary = await summarize_changes(
+                                old_text, 
+                                new_text, 
+                                ai_focus_note=ai_focus_note,
+                                trigger_mode_enabled=trigger_mode_enabled,
+                                image_path=current_screenshot_path
+                            )
+                        except Exception as e:
+                            print(f"Gemini Vision fallback error: {e}")
+                    else:
+                        print(f"Visual diff too small ({percent_diff:.2f}%) for {monitor['url']}.")
+                        if current_screenshot_path and os.path.exists(current_screenshot_path):
+                            os.remove(current_screenshot_path) # Cleanup unused temp image
+
+
+            # Handle Sniper Trigger Mode
+            if trigger_mode_enabled and not is_significant:
+                print(f"Evaluating Trigger Mode for {monitor['url']}")
+                # For trigger mode, we always summarize to check if the trigger condition is met
+                ai_summary = await summarize_changes(
+                    old_text, 
+                    new_text, 
+                    ai_focus_note=ai_focus_note,
+                    trigger_mode_enabled=True,
+                    image_path=current_screenshot_path if (visual_mode_enabled and os.path.exists(current_screenshot_path)) else None
+                )
+                if ai_summary != "TRIGGER_NOT_MET":
+                    is_significant = True
+                else:
+                    print(f"Sniper Trigger NOT met for {monitor['url']}.")
+
+            # Handle Standard Text Diffing
+            if not visual_changed and not trigger_mode_enabled and old_text != new_text:
+                print(f"Changes detected on {monitor['url']}, requesting AI summary...")
+                ai_summary = await summarize_changes(old_text, new_text, ai_focus_note, trigger_mode_enabled)
+                if "No significant changes" not in ai_summary:
+                    is_significant = True
+
+            # Check if we should notify
+            if is_significant and ai_summary:
+                monitors_col.update_one(
+                    {"_id": monitor["_id"]},
+                    {
+                        "$set": {
+                            "last_scraped_text": new_text,
+                            "latest_ai_summary": ai_summary,
+                            "last_updated_timestamp": datetime.datetime.now()
                         }
-                    )
-                    await trigger_notifications(monitor, summary, image_path=current_screenshot_path)
-                    
-                    # Store as new baseline
+                    }
+                )
+                await trigger_notifications(monitor, ai_summary, image_path=current_screenshot_path if visual_mode_enabled else None)
+                
+                # Store new visual baseline if it was a visual change
+                if visual_mode_enabled and visual_changed:
                     if os.path.exists(last_screenshot_path):
                         os.remove(last_screenshot_path)
                     if os.path.exists(current_screenshot_path):
                         os.rename(current_screenshot_path, last_screenshot_path)
-                else:
-                    print(f"Visual diff too small ({percent_diff:.2f}%) for {monitor['url']}.")
-                    monitors_col.update_one(
-                        {"_id": monitor["_id"]},
-                        {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
-                    )
-                    if current_screenshot_path and os.path.exists(current_screenshot_path):
-                        os.remove(current_screenshot_path) # Cleanup unused temp image
-
-            # Handle Sniper Trigger Mode
-            elif trigger_mode_enabled:
-                print(f"Evaluating Trigger Mode for {monitor['url']}")
-                summary = await summarize_changes("", new_text, ai_focus_note, trigger_mode_enabled)
-                
-                if summary != "TRIGGER_NOT_MET":
-                     monitors_col.update_one(
-                        {"_id": monitor["_id"]},
-                        {
-                            "$set": {
-                                "last_scraped_text": new_text, # update text to prevent endless re-triggers for the exact same state (optional, but good practice)
-                                "latest_ai_summary": summary,
-                                "last_updated_timestamp": datetime.datetime.now()
-                            }
-                        }
-                    )
-                     await trigger_notifications(monitor, summary)
-                else:
-                    print(f"Sniper Trigger NOT met for {monitor['url']}.")
-                    # Update timestamp so user knows it checked, but silent
-                    monitors_col.update_one(
-                        {"_id": monitor["_id"]},
-                        {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
-                    )
-
-            # Handle Standard Mode
             else:
-                old_text = monitor.get('last_scraped_text', '')
-                
-                if old_text != new_text:
-                    print(f"Changes detected on {monitor['url']}")
-                    summary = await summarize_changes(old_text, new_text, ai_focus_note, trigger_mode_enabled)
-                    
-                    if "No significant changes" not in summary:
-                        monitors_col.update_one(
-                            {"_id": monitor["_id"]},
-                            {
-                                "$set": {
-                                    "last_scraped_text": new_text,
-                                    "latest_ai_summary": summary,
-                                    "last_updated_timestamp": datetime.datetime.now()
-                                }
-                            }
-                        )
-                        
-                        # Trigger notifications via Netlify
-                        await trigger_notifications(monitor, summary)
-                    else:
-                        print(f"AI determined changes were not significant for {monitor['url']}.")
-                        monitors_col.update_one(
-                            {"_id": monitor["_id"]},
-                            {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
-                        )
-                else:
-                    print(f"No changes on {monitor['url']}")
-                    monitors_col.update_one(
-                        {"_id": monitor["_id"]},
-                        {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
-                    )
+                print(f"No significant updates for {monitor['url']}")
+                # Just update the timestamp
+                monitors_col.update_one(
+                    {"_id": monitor["_id"]},
+                    {"$set": {"last_updated_timestamp": datetime.datetime.now()}}
+                )
+
+        # Mark success 
+        monitors_col.update_one(
+            {"_id": monitor["_id"]},
+            {"$set": {
+                "last_run_status": "success",
+                "last_error": None,
+                "last_error_time": None
+            }}
+        )
 
 async def run_worker():
     client = MongoClient(MONGO_URI)
