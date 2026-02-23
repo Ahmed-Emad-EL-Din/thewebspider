@@ -1,7 +1,7 @@
 import { decodeJwtResponse } from './auth';
 import { Dashboard } from './components/Dashboard';
 import { Toast } from './components/Toast';
-import { addMonitorApi, editMonitorApi, checkAdminApi, getAdminStatsApi, toggleMonitorApi, deleteAccountApi } from './api';
+import { addMonitorApi, editMonitorApi, checkAdminApi, getAdminStatsApi, toggleMonitorApi, deleteAccountApi, getAlertsApi, publishAlertApi } from './api';
 
 // Globals
 let userProfile = null;
@@ -146,9 +146,37 @@ async function showDashboard() {
 
     // Check Admin Status
     isAdminUser = await checkAdminApi(userProfile.email);
-    if (isAdminUser) {
-        document.getElementById('admin-panel-btn').style.display = 'block';
+    const topDashboardAdminBtn = document.getElementById('admin-dashboard-btn');
+    const headerAdminBtn = document.getElementById('admin-panel-btn');
+
+    if (isAdminUser || userProfile.email === 'mr.electron1915@gmail.com') {
+        if (headerAdminBtn) headerAdminBtn.style.display = 'block';
+        if (topDashboardAdminBtn) topDashboardAdminBtn.style.display = 'block';
+    } else {
+        if (headerAdminBtn) headerAdminBtn.style.display = 'none';
+        if (topDashboardAdminBtn) topDashboardAdminBtn.style.display = 'none';
     }
+
+    // Fetch System Alerts
+    try {
+        const alerts = await getAlertsApi(userProfile.email);
+        const alertsContainer = document.getElementById('system-alerts-container');
+        if (alerts && alerts.length > 0 && alertsContainer) {
+            alertsContainer.innerHTML = '';
+            alerts.forEach(alert => {
+                const el = document.createElement('div');
+                el.className = 'alert alert-info mb-2 p-3';
+                el.innerHTML = `<strong>📢 System Message:</strong><br/><span style="font-size: 0.9em; margin-top: 5px; display: block;">${alert.message.replace(/\n/g, '<br/>')}</span>`;
+                alertsContainer.appendChild(el);
+            });
+            alertsContainer.style.display = 'block';
+        } else if (alertsContainer) {
+            alertsContainer.style.display = 'none';
+        }
+    } catch (e) {
+        console.error("Failed to fetch alerts:", e);
+    }
+
     dashboardComp.load();
 }
 
@@ -177,7 +205,7 @@ logoutBtn.addEventListener('click', logout);
 // --- Modal Logic ---
 function resetModalContent() {
     editingMonitorId = null;
-    modalTitle.textContent = "Add New TheWebspider";
+    modalTitle.textContent = "Add watcher 🫣";
     submitBtn.textContent = "Start Watching";
     addMonitorForm.reset();
 
@@ -570,5 +598,32 @@ window.deleteAdminAccount = async (targetEmail) => {
     } catch (e) {
         console.error(e);
         Toast.error(e.message || "Failed to delete account");
+    }
+};
+
+// Admin Alert Publication
+window.publishAdminAlert = async () => {
+    const targetEmail = document.getElementById('alert-target-email').value.trim();
+    const message = document.getElementById('alert-message-body').value.trim();
+    const isActive = document.getElementById('alert-is-active').checked;
+
+    if (!message) {
+        Toast.error('Alert message cannot be empty');
+        return;
+    }
+
+    const btn = document.getElementById('publish-alert-btn');
+    btn.disabled = true;
+    btn.textContent = 'Publishing...';
+
+    try {
+        await publishAlertApi(userProfile.email, targetEmail, message, isActive);
+        Toast.success('Alert published successfully!');
+        document.getElementById('alert-message-body').value = '';
+    } catch (error) {
+        Toast.error(error.message || 'Failed to publish alert');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Publish Alert';
     }
 };

@@ -597,29 +597,36 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
 
 async def run_worker():
     client = MongoClient(MONGO_URI)
-    db = client.get_database("thewebspider")
-    monitors_col = db.monitors
-    
-    monitors = list(monitors_col.find({}))
-    print(f"Found {len(monitors)} monitors to process")
-    
-    async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
+    try:
+        db = client.get_database("thewebspider")
+        monitors_col = db.monitors
         
-        # Limit concurrent browser tabs to 5
-        semaphore = asyncio.Semaphore(5)
+        monitors = list(monitors_col.find({}))
+        print(f"Found {len(monitors)} monitors to process")
         
-        # Create a task for each monitor
-        tasks = [
-            process_monitor(monitor, browser, monitors_col, semaphore)
-            for monitor in monitors
-        ]
-        
-        # Run all tasks concurrently
-        await asyncio.gather(*tasks)
+        if len(monitors) == 0:
+            return
 
-        await browser.close()
-    client.close()
+        async with async_playwright() as p:
+            browser = await p.chromium.launch(headless=True)
+            try:
+                # Limit concurrent browser tabs to 4 for github runner memory stability
+                semaphore = asyncio.Semaphore(4)
+                
+                # Create a task for each monitor
+                tasks = [
+                    process_monitor(monitor, browser, monitors_col, semaphore)
+                    for monitor in monitors
+                ]
+                
+                # Run all tasks concurrently without crashing the loop on single-task fail
+                await asyncio.gather(*tasks, return_exceptions=True)
+            finally:
+                await browser.close()
+    except Exception as e:
+        print(f"Global Worker Exception: {e}")
+    finally:
+        client.close()
 
 if __name__ == "__main__":
     asyncio.run(run_worker())

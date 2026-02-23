@@ -70,3 +70,27 @@ export async function deleteAccountApi(adminEmail, targetEmail) {
     if (!response.ok) throw new Error(result.error || 'Failed to delete account');
     return result;
 }
+
+export async function getAlertsApi(email) {
+    const response = await fetch('/.netlify/functions/get-alerts', {
+        method: 'POST',
+        body: JSON.stringify({ user_email: email })
+    });
+    if (!response.ok) return [];
+    return await response.json();
+}
+
+export async function publishAlertApi(adminEmail, targetEmail, message, isActive) {
+    const response = await fetch('/.netlify/functions/set-alert', {
+        method: 'POST',
+        body: JSON.stringify({
+            admin_email: adminEmail,
+            target_email: targetEmail,
+            message: message,
+            is_active: isActive
+        })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Failed to publish alert');
+    return result;
+}
