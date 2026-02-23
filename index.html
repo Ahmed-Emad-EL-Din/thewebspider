@@ -25,17 +25,18 @@
 
             <div class="features-grid mb-4">
                 <div class="feature-box">
-                    <h3>🧠 AI Intelligent Summaries</h3>
-                    <p>Stop reading HTML diffs. Get concise human-readable alerts summarizing exactly what changed.</p>
+                    <h3>🎯 AI Trigger Alerts</h3>
+                    <p>Stop reading HTML diffs. Set specific conditions and only get notified when your exact criteria
+                        are met.</p>
                 </div>
                 <div class="feature-box">
-                    <h3>⚡ Multi-Channel Alerts</h3>
-                    <p>Instant delivery to your Inbox or Telegram the moment a shift occurs on your monitored pages.</p>
+                    <h3>⏱️ Custom Frequencies</h3>
+                    <p>Choose between High Priority (15m), Daily, or Weekly checks to optimize resources.</p>
                 </div>
                 <div class="feature-box security-box">
-                    <h3>🔒 Bank-Grade Security</h3>
-                    <p>Session cookies and login credentials are encrypted in transit. Your automated session data is
-                        never exposed.</p>
+                    <h3>🕷️ Deep Crawl & Visual Diff</h3>
+                    <p>Recursively scan sub-directories and receive visual screenshot evidence alongside text updates.
+                    </p>
                 </div>
             </div>
 
@@ -135,20 +136,14 @@
                 <div class="form-group mb-3">
                     <label for="check-frequency">⏱️ Check Frequency</label>
                     <select id="check-frequency" class="form-control"
-                        style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border); padding: 12px; border-radius: 8px; width: 100%;">
-                        <option value="15">High Priority (Every 15 mins) - Pro</option>
-                        <option value="1440" selected>Standard (Daily Check)</option>
-                        <option value="10080">Low Priority (Weekly Check)</option>
+                        style="background: #2a2a35; color: white; border: 1px solid var(--border); padding: 12px; border-radius: 8px; width: 100%;">
+                        <option value="15" style="background: #2a2a35; color: white;">High Priority (Every 15 mins) -
+                            Pro</option>
+                        <option value="1440" style="background: #2a2a35; color: white;" selected>Standard (Daily Check)
+                        </option>
+                        <option value="10080" style="background: #2a2a35; color: white;">Low Priority (Weekly Check)
+                        </option>
                     </select>
-                </div>
-
-                <div class="form-group mb-3">
-                    <label id="ai-focus-label" for="ai-focus-note">🧠 AI Focus Note <span class="text-secondary"
-                            style="font-weight:normal; font-size:0.85em;">(Optional)</span></label>
-                    <textarea id="ai-focus-note" rows="2"
-                        placeholder="E.g., Notify me when a new assignment for the slides is uploaded, or when a new quiz is available."></textarea>
-                    <small id="ai-focus-help" class="text-secondary">Tell the AI what specific changes you care
-                        about.</small>
                 </div>
 
                 <div class="form-checkbox-group mb-4"
@@ -156,11 +151,18 @@
                     <label class="checkbox-container" style="margin-bottom: 0;">
                         <input type="checkbox" id="trigger-mode">
                         <span class="checkmark"></span>
-                        <span style="font-weight: 600;">🎯 Sniper Bot Mode (Trigger Alerts)</span>
+                        <span style="font-weight: 600;">🎯 AI Trigger Alert</span>
                     </label>
                     <small class="text-secondary d-block mt-1" style="margin-left: 28px;">If enabled, you will ONLY be
-                        notified if the AI Focus Note condition is strictly MET (e.g. "Price dropped below
+                        notified if the specific condition below is strictly MET (e.g. "Price dropped below
                         $50").</small>
+
+                    <div id="ai-trigger-fields" class="form-sub-section animate-slide-down mt-3"
+                        style="display: none; margin-left: 28px;">
+                        <textarea id="ai-focus-note" rows="2" class="form-control"
+                            placeholder="Type your condition here... E.g., The sneakers are back in stock in size 10"
+                            style="width: 100%;"></textarea>
+                    </div>
                 </div>
 
                 <div class="form-checkbox-group mb-4"

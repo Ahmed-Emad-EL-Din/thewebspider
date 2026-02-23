@@ -182,8 +182,7 @@ function resetModalContent() {
     addMonitorForm.reset();
 
     // Reset Trigger Mode visual state
-    aiFocusLabel.innerHTML = `🧠 AI Focus Note <span class="text-secondary" style="font-weight:normal; font-size:0.85em;">(Optional)</span>`;
-    aiFocusHelp.textContent = "Tell the AI what specific changes you care about.";
+    document.getElementById('ai-trigger-fields').style.display = 'none';
 
     // Reset newly added inputs
     visualModeCheck.checked = false;
@@ -242,8 +241,9 @@ window.addEventListener('open-edit-modal', (e) => {
 
     if (monitor.trigger_mode_enabled) {
         triggerModeCheck.checked = true;
-        aiFocusLabel.innerHTML = `🎯 Trigger Condition <span style="color:var(--danger); font-weight:normal; font-size:0.85em;">(Required)</span>`;
-        aiFocusHelp.textContent = "The bot will ONLY alert you if this condition is fully met.";
+        document.getElementById('ai-trigger-fields').style.display = 'block';
+    } else {
+        document.getElementById('ai-trigger-fields').style.display = 'none';
     }
 
     if (monitor.ai_focus_note) aiFocusNoteInput.value = monitor.ai_focus_note;
@@ -301,15 +301,7 @@ closeModalBtn.addEventListener('click', () => {
 });
 
 triggerModeCheck.addEventListener('change', (e) => {
-    if (e.target.checked) {
-        aiFocusLabel.innerHTML = `🎯 Trigger Condition <span style="color:var(--danger); font-weight:normal; font-size:0.85em;">(Required)</span>`;
-        aiFocusHelp.textContent = "The bot will ONLY alert you if this condition is fully met.";
-        if (!aiFocusNoteInput.value) aiFocusNoteInput.placeholder = "E.g., The price dropped below $50";
-    } else {
-        aiFocusLabel.innerHTML = `🧠 AI Focus Note <span class="text-secondary" style="font-weight:normal; font-size:0.85em;">(Optional)</span>`;
-        aiFocusHelp.textContent = "Tell the AI what specific changes you care about.";
-        aiFocusNoteInput.placeholder = "E.g., Notify me when a new assignment for the slides is uploaded, or when a new quiz is available.";
-    }
+    document.getElementById('ai-trigger-fields').style.display = e.target.checked ? 'block' : 'none';
 });
 
 deepCrawlCheck.addEventListener('click', (e) => {

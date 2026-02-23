@@ -1,6 +1,13 @@
 # TheWebspider - Technical Documentation & Walkthrough
 
-TheWebspider is a full-stack automated monitoring platform that tracks webpage changes, generates AI-powered summaries of significant updates using Google Gemini, and notifies users via Email and Telegram.
+TheWebspider is a full-stack automated monitoring platform that tracks webpage changes, generates AI-powered alerts using Google Gemini, captures visual screenshots, and notifies users via Email, Webhooks, and Telegram.
+
+## ✨ Key Features
+- **AI Trigger Alerts:** Specify exact conditions (e.g., "Price dropped under $50"). The system ignores irrelevant updates and *only* alerts you when your condition is met.
+- **Custom Frequencies:** Select checks every 15 minutes, daily, or weekly to optimize GitHub Actions compute time.
+- **Deep Crawling:** Configurable depth up to Level 5 to monitor an entire sub-domain tree instead of just a single URL.
+- **Visual Screenshots:** Automatically capture and compare UI screenshots to alert you when visual regressions or changes exceed a 1% threshold.
+- **Admin Dashboard:** Centralized monitoring of active jobs, fail tallies, and user pause controls.
 
 ## 🏗️ Architecture Overview
 
