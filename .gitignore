@@ -23,3 +23,6 @@ logs/
 # OS Files
 .DS_Store
 Thumbs.db
+
+# Dynamic Content
+screenshots/

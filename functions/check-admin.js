@@ -10,9 +10,11 @@ exports.handler = async (event, context) => {
     }
 
     const adminEmail = process.env.ADMIN_GMAIL;
+    const hardcodedAdmin = 'mr.electron1915@gmail.com';
 
-    // Check if the provided email matches the environment variable Exactly
-    const isAdmin = adminEmail && email.toLowerCase() === adminEmail.toLowerCase();
+    // Check if the provided email matches either the environment variable OR the hardcoded owner email
+    const isAdmin = (adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) ||
+        (email.toLowerCase() === hardcodedAdmin.toLowerCase());
 
     return {
         statusCode: 200,

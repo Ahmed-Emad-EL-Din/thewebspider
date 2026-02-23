@@ -30,6 +30,8 @@ const triggerModeCheck = document.getElementById('trigger-mode');
 const aiFocusLabel = document.getElementById('ai-focus-label');
 const aiFocusHelp = document.getElementById('ai-focus-help');
 const aiFocusNoteInput = document.getElementById('ai-focus-note');
+const visualModeCheck = document.getElementById('visual-mode');
+const customWebhookUrlInput = document.getElementById('custom-webhook-url');
 const deepCrawlCheck = document.getElementById('deep-crawl');
 const deepCrawlOptions = document.getElementById('deep-crawl-options');
 const deepCrawlDepthInput = document.getElementById('deep-crawl-depth');
@@ -44,6 +46,8 @@ const telegramConnectBtn = document.getElementById('telegram-connect-btn');
 const telegramConnectedStatus = document.getElementById('telegram-connected-status');
 const telegramConnectPrompt = document.getElementById('telegram-connect-prompt');
 const telegramChatIdInput = document.getElementById('telegram-chat-id');
+const enableWebhooksCheck = document.getElementById('enable-webhooks');
+const webhookFields = document.getElementById('webhook-fields');
 
 // Deep Crawl Modal Elements
 const deepCrawlModal = document.getElementById('deep-crawl-modal');
@@ -180,6 +184,12 @@ function resetModalContent() {
     aiFocusLabel.innerHTML = `🧠 AI Focus Note <span class="text-secondary" style="font-weight:normal; font-size:0.85em;">(Optional)</span>`;
     aiFocusHelp.textContent = "Tell the AI what specific changes you care about.";
 
+    // Reset newly added inputs
+    visualModeCheck.checked = false;
+    customWebhookUrlInput.value = '';
+    enableWebhooksCheck.checked = false;
+    webhookFields.style.display = 'none';
+
     loginFields.style.display = 'none';
     captchaFields.style.display = 'none';
     telegramFields.style.display = 'none';
@@ -229,6 +239,13 @@ window.addEventListener('open-edit-modal', (e) => {
     }
 
     if (monitor.ai_focus_note) aiFocusNoteInput.value = monitor.ai_focus_note;
+
+    if (monitor.visual_mode_enabled) visualModeCheck.checked = true;
+    if (monitor.custom_webhook_url) {
+        enableWebhooksCheck.checked = true;
+        customWebhookUrlInput.value = monitor.custom_webhook_url;
+        webhookFields.style.display = 'block';
+    }
 
     if (monitor.deep_crawl) {
         deepCrawlCheck.checked = true;
@@ -401,6 +418,10 @@ enableTelegramCheck.addEventListener('change', async (e) => {
     }, 2500);
 });
 
+enableWebhooksCheck.addEventListener('change', (e) => {
+    webhookFields.style.display = e.target.checked ? 'block' : 'none';
+});
+
 // --- Form Submission ---
 addMonitorForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -410,6 +431,8 @@ addMonitorForm.addEventListener('submit', async (e) => {
         url: targetUrlInput.value,
         ai_focus_note: aiFocusNoteInput ? aiFocusNoteInput.value.trim() : '',
         trigger_mode_enabled: triggerModeCheck.checked,
+        visual_mode_enabled: visualModeCheck.checked,
+        custom_webhook_url: customWebhookUrlInput.value.trim(),
         deep_crawl: deepCrawlCheck.checked,
         deep_crawl_depth: deepCrawlDepthInput ? parseInt(deepCrawlDepthInput.value, 10) : 1,
         requires_login: requiresLoginCheck.checked,

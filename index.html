@@ -132,19 +132,6 @@
                     <input type="url" id="target-url" placeholder="https://example.com/page-to-watch" required>
                 </div>
 
-                <div class="form-checkbox-group mb-3"
-                    style="background: rgba(220, 38, 38, 0.1); padding: 10px; border-radius: 8px; border: 1px solid var(--danger);">
-                    <label class="checkbox-container" style="margin-bottom: 0;">
-                        <input type="checkbox" id="trigger-mode">
-                        <span class="checkmark"></span>
-                        <span style="color: var(--danger); font-weight: bold;">🎯 Sniper Bot Mode (Trigger
-                            Alerts)</span>
-                    </label>
-                    <small class="text-secondary d-block mt-1" style="margin-left: 28px;">If enabled, you will ONLY be
-                        notified if the AI Focus Note condition is strictly MET (e.g. "Price dropped below
-                        $50").</small>
-                </div>
-
                 <div class="form-group mb-3">
                     <label id="ai-focus-label" for="ai-focus-note">🧠 AI Focus Note <span class="text-secondary"
                             style="font-weight:normal; font-size:0.85em;">(Optional)</span></label>
@@ -152,6 +139,29 @@
                         placeholder="E.g., Notify me when a new assignment for the slides is uploaded, or when a new quiz is available."></textarea>
                     <small id="ai-focus-help" class="text-secondary">Tell the AI what specific changes you care
                         about.</small>
+                </div>
+
+                <div class="form-checkbox-group mb-4"
+                    style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                    <label class="checkbox-container" style="margin-bottom: 0;">
+                        <input type="checkbox" id="trigger-mode">
+                        <span class="checkmark"></span>
+                        <span style="font-weight: 600;">🎯 Sniper Bot Mode (Trigger Alerts)</span>
+                    </label>
+                    <small class="text-secondary d-block mt-1" style="margin-left: 28px;">If enabled, you will ONLY be
+                        notified if the AI Focus Note condition is strictly MET (e.g. "Price dropped below
+                        $50").</small>
+                </div>
+
+                <div class="form-checkbox-group mb-4"
+                    style="background: rgba(99, 102, 241, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.1);">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="visual-mode">
+                        <span class="checkmark"></span>
+                        📸 Enable Visual Screenshots <span class="badge-experimental">New</span>
+                    </label>
+                    <small class="text-secondary d-block mt-1" style="margin-left: 35px;">Instead of text, capture an
+                        image showing the exact visual change.</small>
                 </div>
 
                 <div class="form-checkbox-group mb-3">
@@ -214,11 +224,18 @@
                     </div>
                 </div>
 
-                <div class="form-checkbox-group mb-3">
+                <div class="form-section-header mb-3"
+                    style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 1.5rem;">
+                    <h4
+                        style="font-size: 0.9rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px;">
+                        🔔 Notifications & Webhooks</h4>
+                </div>
+
+                <div class="form-checkbox-group mb-2">
                     <label class="checkbox-container">
                         <input type="checkbox" id="enable-notifications" checked>
                         <span class="checkmark"></span>
-                        Enable Email Notifications
+                        Email Notifications
                     </label>
                 </div>
 
@@ -226,7 +243,7 @@
                     <label class="checkbox-container">
                         <input type="checkbox" id="enable-telegram">
                         <span class="checkmark"></span>
-                        Enable Telegram Notifications
+                        Telegram Alerts
                     </label>
                 </div>
 
@@ -235,7 +252,7 @@
                         <p class="text-secondary mb-2" style="font-size: 0.9em;">Click below to securely link your
                             Telegram account for instant alerts.</p>
                         <a id="telegram-connect-btn" href="#" target="_blank" class="btn btn-outline btn-block"
-                            style="text-decoration:none; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                            style="text-decoration:none; text-align:center; display: flex; justify-content: center; align-items: center; gap: 8px; background: rgba(0, 136, 204, 0.1); border-color: rgba(0, 136, 204, 0.3);">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                                 xmlns="http://www.w3.org/2000/svg">
                                 <path d="M21 5L2 12.5L9 14M21 5L18.5 20L9 14M21 5L9 14M9 14V19.5L13.5 15.5"
@@ -248,8 +265,31 @@
                     <div id="telegram-connected-status" class="alert alert-success mb-2" style="display: none;">
                         ✅ Linked successfully!
                     </div>
-                    <!-- Hidden field to store the auto-retrieved Chat ID -->
                     <input type="hidden" id="telegram-chat-id">
+                </div>
+
+                <div class="form-checkbox-group mb-3">
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="enable-webhooks">
+                        <span class="checkmark"></span>
+                        Enable Discord / Slack Webhooks
+                    </label>
+                </div>
+
+                <div id="webhook-fields" class="form-group mb-4"
+                    style="display: none; background: rgba(88, 101, 242, 0.05); padding: 12px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.2);">
+                    <label for="custom-webhook-url" style="display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M19.27 4.73C17.69 3.15 15.58 2.27 13.34 2.27C8.85 2.27 5.21 5.91 5.21 10.4C5.21 11.9 5.61 13.31 6.31 14.51L2.27 21.73H21.73L17.69 14.51C18.39 13.31 18.79 11.9 18.79 10.4C18.79 8.16 17.91 6.05 16.33 4.47L19.27 4.73Z" />
+                        </svg>
+                        Webhook Destination URL
+                    </label>
+                    <input type="url" id="custom-webhook-url" placeholder="https://discord.com/api/webhooks/..."
+                        style="margin-top: 5px;">
+                    <small class="text-secondary d-block mt-1">Paste a webhook URL to receive alerts in Discord or
+                        Slack.</small>
                 </div>
 
                 <div class="d-flex justify-end">
