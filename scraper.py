@@ -378,6 +378,21 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
             print(f"Skipping {monitor['url']} (Paused by Admin)")
             return
 
+        # Check Custom Frequency
+        check_frequency = monitor.get('check_frequency', 1440) # Default to daily
+        last_updated = monitor.get('last_updated_timestamp')
+        
+        if last_updated:
+            now = datetime.datetime.now()
+            # Handle if the DB timestamp doesn't have timezone info and now() doesn't
+            time_diff = now - last_updated
+            minutes_passed = time_diff.total_seconds() / 60.0
+            
+            # 5-minute grace period to account for cron jitter
+            if minutes_passed < (check_frequency - 5):
+                print(f"Skipping {monitor['url']} (Not time yet. Freq: {check_frequency}m, Passed: {minutes_passed:.1f}m)")
+                return
+
         # Set up Visual Mode paths
         visual_mode_enabled = monitor.get('visual_mode_enabled', False)
         screenshots_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'screenshots')

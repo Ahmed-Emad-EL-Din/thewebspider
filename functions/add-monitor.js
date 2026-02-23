@@ -7,7 +7,7 @@ exports.handler = async (event, context) => {
 
     try {
         const data = JSON.parse(event.body);
-        const { user_email, url, ai_focus_note, trigger_mode_enabled, visual_mode_enabled, custom_webhook_url, deep_crawl, deep_crawl_depth, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
+        const { user_email, url, ai_focus_note, trigger_mode_enabled, visual_mode_enabled, custom_webhook_url, deep_crawl, deep_crawl_depth, check_frequency, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
 
         if (!user_email || !url) {
             return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
@@ -29,6 +29,9 @@ exports.handler = async (event, context) => {
         if (isNaN(depth) || depth < 1) depth = 1;
         if (depth > 5) depth = 5; // Enforce hard maximum bounds
 
+        let frequency = parseInt(check_frequency, 10);
+        if (isNaN(frequency) || frequency < 15) frequency = 1440; // Default to Daily if invalid
+
         const newMonitor = {
             user_email,
             url,
@@ -38,6 +41,7 @@ exports.handler = async (event, context) => {
             custom_webhook_url: custom_webhook_url || '',
             deep_crawl: !!deep_crawl,
             deep_crawl_depth: depth,
+            check_frequency: frequency,
             requires_login: !!requires_login,
             has_captcha: !!has_captcha,
             username: username || '',

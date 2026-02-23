@@ -8,7 +8,7 @@ exports.handler = async (event, context) => {
 
     try {
         const data = JSON.parse(event.body);
-        const { id, user_email, url, ai_focus_note, trigger_mode_enabled, visual_mode_enabled, custom_webhook_url, deep_crawl, deep_crawl_depth, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
+        const { id, user_email, url, ai_focus_note, trigger_mode_enabled, visual_mode_enabled, custom_webhook_url, deep_crawl, deep_crawl_depth, check_frequency, requires_login, has_captcha, username, password, captcha_json, email_notifications_enabled, telegram_notifications_enabled, telegram_chat_id } = data;
 
         if (!id || !user_email || !url) {
             return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
@@ -20,6 +20,9 @@ exports.handler = async (event, context) => {
         let depth = parseInt(deep_crawl_depth, 10);
         if (isNaN(depth) || depth < 1) depth = 1;
         if (depth > 5) depth = 5;
+
+        let frequency = parseInt(check_frequency, 10);
+        if (isNaN(frequency) || frequency < 15) frequency = 1440;
 
         // Ensure we only update a monitor belonging to the requested user
         const result = await collection.updateOne(
@@ -33,6 +36,7 @@ exports.handler = async (event, context) => {
                     custom_webhook_url: custom_webhook_url || '',
                     deep_crawl: !!deep_crawl,
                     deep_crawl_depth: depth,
+                    check_frequency: frequency,
                     requires_login: !!requires_login,
                     has_captcha: !!has_captcha,
                     username: username || '',

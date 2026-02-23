@@ -128,8 +128,18 @@
             </div>
             <form id="add-monitor-form">
                 <div class="form-group mb-3">
-                    <label for="target-url">Target URL</label>
+                    <label for="target-url">🎯 Target URL</label>
                     <input type="url" id="target-url" placeholder="https://example.com/page-to-watch" required>
+                </div>
+
+                <div class="form-group mb-3">
+                    <label for="check-frequency">⏱️ Check Frequency</label>
+                    <select id="check-frequency" class="form-control"
+                        style="background: var(--input-bg); color: var(--text-primary); border: 1px solid var(--border); padding: 12px; border-radius: 8px; width: 100%;">
+                        <option value="15">High Priority (Every 15 mins) - Pro</option>
+                        <option value="1440" selected>Standard (Daily Check)</option>
+                        <option value="10080">Low Priority (Weekly Check)</option>
+                    </select>
                 </div>
 
                 <div class="form-group mb-3">

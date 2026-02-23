@@ -61,6 +61,7 @@ const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const captchaJsonInput = document.getElementById('captcha-json');
 const enableNotificationsCheck = document.getElementById('enable-notifications');
+const checkFrequencySelect = document.getElementById('check-frequency');
 let editingMonitorId = null; // null = Add Mode, string = Edit Mode
 
 // Telegram State
@@ -189,6 +190,7 @@ function resetModalContent() {
     customWebhookUrlInput.value = '';
     enableWebhooksCheck.checked = false;
     webhookFields.style.display = 'none';
+    if (checkFrequencySelect) checkFrequencySelect.value = "1440";
 
     loginFields.style.display = 'none';
     captchaFields.style.display = 'none';
@@ -231,6 +233,12 @@ window.addEventListener('open-edit-modal', (e) => {
     submitBtn.textContent = "Save Changes";
 
     targetUrlInput.value = monitor.url;
+
+    if (monitor.check_frequency) {
+        checkFrequencySelect.value = monitor.check_frequency.toString();
+    } else {
+        checkFrequencySelect.value = "1440"; // Default
+    }
 
     if (monitor.trigger_mode_enabled) {
         triggerModeCheck.checked = true;
@@ -435,6 +443,7 @@ addMonitorForm.addEventListener('submit', async (e) => {
         custom_webhook_url: customWebhookUrlInput.value.trim(),
         deep_crawl: deepCrawlCheck.checked,
         deep_crawl_depth: deepCrawlDepthInput ? parseInt(deepCrawlDepthInput.value, 10) : 1,
+        check_frequency: checkFrequencySelect ? parseInt(checkFrequencySelect.value, 10) : 1440,
         requires_login: requiresLoginCheck.checked,
         username: usernameInput.value,
         password: passwordInput.value,
