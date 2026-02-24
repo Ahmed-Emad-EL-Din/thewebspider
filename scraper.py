@@ -488,8 +488,12 @@ async def process_monitor(monitor, browser, monitors_col, semaphore):
                 }
             )
             
-            # Send notification for the first run if it's NOT a silent trigger initialization
-            if summary != "TRIGGER_NOT_MET":
+            # Handled first-run notifications
+            if trigger_mode_enabled and summary == "TRIGGER_NOT_MET":
+                # Send a setup confirmation email so the user knows the bot is actively waiting
+                setup_summary = f"🎯 **Sniper Bot Activated!**\n\nThe engine has successfully initialized and is now actively watching for your condition:\n*{ai_focus_note}*\n\nYou will NOT receive any further emails until this specific condition is strictly met."
+                await trigger_notifications(monitor, setup_summary, image_path=current_screenshot_path if visual_mode_enabled else None)
+            elif summary != "TRIGGER_NOT_MET":
                 await trigger_notifications(monitor, summary, image_path=current_screenshot_path if visual_mode_enabled else None)
                 
             # Overwrite the old image baseline
